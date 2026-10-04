@@ -1,32 +1,165 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nitro Racing</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background-color: #111;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      overflow: hidden;
-    }
-    canvas {
-      border: 2px solid #444;
-      background: #222;
-      max-width: 100%;
-      max-height: 100vh;
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nitro Rush</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{height:100%}
+body{margin:0;height:100%;background:#12151d;color:#fff;overflow:hidden;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-user-select:none;user-select:none}
+[hidden]{display:none!important}
+#app{position:relative;width:100%;height:100%;touch-action:none;overflow:hidden}
+canvas{display:block}
+.ov{position:absolute;inset:0;pointer-events:none}
+#vig{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 55%,#000b 100%);opacity:.3}
+.ov button,.pn{pointer-events:auto}
+button{font:inherit;font-weight:800;color:#fff;border:0;cursor:pointer;text-shadow:0 2px 4px #0008;-webkit-tap-highlight-color:transparent}
+.or{background:linear-gradient(#ff9a3c,#f26b0f)}.bl{background:linear-gradient(#2f80e8,#1757b0)}
+.top{position:absolute;top:10px;left:10px;right:10px;display:flex;gap:8px;align-items:center;font-weight:800;font-size:18px}
+.chip{background:#14161ccc;padding:7px 12px;border-radius:6px;font-style:italic;text-shadow:0 2px 6px #000a}
+#cn{position:absolute;top:54px;left:0;right:0;text-align:center;font-size:clamp(26px,8vw,44px);font-weight:900;font-style:italic;letter-spacing:2px;text-shadow:0 3px 10px #000a}
+.arr{position:absolute;top:50%;width:50px;height:50px;margin-top:-25px;border-radius:50%;font-size:30px;background:#14161caa;padding:0}
+#pv{left:8px}#nx{right:8px}
+#bars{position:absolute;right:10px;top:104px;width:140px;background:#14161c99;padding:8px 10px;border-radius:6px}
+.r span{font-size:11px;font-weight:800;font-style:italic}
+.r b{display:block;height:7px;margin:2px 0 6px;background:#fff3;border-radius:3px;overflow:hidden}
+.r i{display:block;height:100%;background:#3ddc84}
+.bot{position:absolute;left:10px;right:10px;bottom:12px;display:flex;gap:10px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap}
+#sw{display:flex;gap:6px;flex-wrap:wrap;max-width:200px}
+#sw button{width:28px;height:28px;border-radius:50%;border:2px solid #fff5;padding:0}
+#sw button.on{border-color:#fff;transform:scale(1.25)}
+.md{display:flex;flex-direction:column;gap:6px}
+.md button{padding:8px 14px;border-radius:5px;background:#14161caa;font-size:13px}
+.md button.on{background:linear-gradient(#2f80e8,#1757b0)}
+#play{padding:14px 34px;font-size:22px;font-style:italic;border-radius:4px}
+#exit{position:absolute;left:10px;top:56px;padding:8px 12px;border-radius:5px;font-size:13px}
+#nit{position:absolute;right:14px;bottom:22px;width:94px;height:94px;border-radius:50%;font-size:15px;font-style:italic;box-shadow:0 0 0 4px #fff4}
+#nit span{display:block;height:6px;width:60px;margin:6px auto 0;background:#0006;border-radius:3px;overflow:hidden}
+#nb{display:block;height:100%;background:#fff}
+.box{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:#0b0d12ea;padding:22px 26px;border-radius:10px;text-align:center;min-width:240px}
+.box h1{margin:0 0 8px;color:#ffd23f;font-style:italic}.box p{margin:6px 0}
+.box button{margin:8px 4px 0;padding:12px 22px;border-radius:5px}
+</style>
 </head>
 <body>
+<div id="app">
+  <div id="vig"></div>
+  <div id="hud" class="ov" hidden>
+    <div class="top"><span class="chip" id="sc">0 m</span><span style="flex:1"></span><span class="chip" id="sp">0 km/h</span></div>
+    <button class="bl" id="exit">&lsaquo; GARAGE</button>
+    <button class="or" id="nit">NITRO<span><i id="nb"></i></span></button>
+  </div>
+  <div id="garage" class="ov">
+    <div class="top"><span class="chip" id="gm"></span><span class="chip" id="st"></span><span style="flex:1"></span><span class="chip" id="bs"></span></div>
+    <div id="cn"></div>
+    <button class="arr" id="pv">&lsaquo;</button><button class="arr" id="nx">&rsaquo;</button>
+    <div class="pn" id="bars"></div>
+    <div class="bot">
+      <div id="sw" class="pn"></div>
+      <div class="md"><button id="m1" class="on">HIGHWAY</button><button id="m2">CITY ROAM</button></div>
+      <button class="or" id="play">PLAY</button>
+    </div>
+  </div>
+  <div id="msg" class="ov" hidden></div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const app = $('app'), hud = $('hud'), gar = $('garage'), msg = $('msg'), sc = $('sc'), spd = $('sp'), nb = $('nb');
+if (!window.THREE) { msg.hidden = false; msg.innerHTML = '<div class="box"><h1>Could not load 3D engine</h1><p>Check your connection and reload.</p></div>'; return; }
 
-  <canvas id="gameCanvas" width="800" height="600"></canvas>
+const CARS = [
+  {n: 'RUSH', p: 0, sp: 55, br: 55, st: 60, ni: 50, rim: 0xd0d0d0, len: 4, wing: 0},
+  {n: 'VIPER', p: 600, sp: 78, br: 62, st: 72, ni: 68, rim: 0xff2a2a, len: 4.2, wing: 1},
+  {n: 'PHANTOM', p: 1500, sp: 95, br: 78, st: 86, ni: 90, rim: 0x222222, len: 4.4, wing: 1}];
+const PAINT = [0xe63946, 0x1e90ff, 0xffc300, 0x2ecc71, 0x9b5de5, 0xffffff, 0x20242b, 0xff7a00];
+let S = {d: 300, s: 0, best: 0, own: [0], car: 0, col: [0, 0, 0], mode: 'hwy'};
 
-  <script src="Script.js"></script>
+const R = new THREE.WebGLRenderer({antialias: true});
+R.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+app.insertBefore(R.domElement, app.firstChild);
+
+const scene = new THREE.Scene(), SKY = 0xcfe8ff;
+scene.fog = new THREE.Fog(SKY, 50, 190);
+const cam = new THREE.PerspectiveCamera(60, 1, 0.1, 500);
+const hemi = new THREE.HemisphereLight(0xcfe3ff, 0x55704a, 0.85);
+const sun = new THREE.DirectionalLight(0xfff2d6, 0.9);
+sun.position.set(10, 20, 10);
+scene.add(hemi, sun);
+
+const L = c => new THREE.MeshLambertMaterial({color: c});
+const P = (c, m = 0.6, r = 0.28) => new THREE.MeshStandardMaterial({color: c, metalness: m, roughness: r});
+
+const wg = new THREE.CylinderGeometry(0.42, 0.42, 0.34, 16);
+const tireM = L(0x111111);
+
+function makeCar(idx, col) {
+  const d = CARS[idx], h = d.len / 2, W = 1.5, g = new THREE.Group(), b = new THREE.Group(); g.add(b);
+  const geo = new THREE.BoxGeometry(W, 0.8, d.len);
+  const paint = P(col); b.add(new THREE.Mesh(geo, paint));
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+    const w = new THREE.Mesh(wg, tireM);
+    w.rotation.z = Math.PI / 2; w.position.set(sx * (W / 2 + 0.12), -0.1, sz * h * 0.62); b.add(w);
+  }
+  return g;
+}
+
+let car;
+function setCar() {
+  if (car) scene.remove(car);
+  car = makeCar(S.car, PAINT[S.col[S.car]]);
+  scene.add(car);
+}
+
+let state = 'garage';
+setCar();
+
+function updateUI() {
+  $('cn').innerText = CARS[S.car].n;
+  $('gm').innerText = 'GEMS: ' + S.s;
+  $('bs').innerText = 'BEST: ' + S.best + 'm';
+}
+updateUI();
+
+function resize() {
+  const w = app.clientWidth, h = app.clientHeight;
+  R.setSize(w, h); cam.aspect = w / h; cam.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize); resize();
+
+let lastT = performance.now();
+function loop(t) {
+  requestAnimationFrame(loop);
+  const dt = Math.min((t - lastT) / 1000, 0.1); lastT = t;
+  if (state === 'garage') {
+    if (car) car.rotation.y += dt * 0.5;
+    cam.position.set(0, 2, 6); cam.lookAt(0, 0, 0);
+  } else {
+    if (car) {
+      cam.position.set(car.position.x, car.position.y + 3, car.position.z + 8);
+      cam.lookAt(car.position);
+    }
+  }
+  R.render(scene, cam);
+}
+requestAnimationFrame(loop);
+
+$('play').onclick = () => {
+  state = 'play';
+  gar.hidden = true; hud.hidden = false;
+};
+
+$('exit').onclick = () => {
+  state = 'garage';
+  gar.hidden = false; hud.hidden = true;
+};
+
+$('pv').onclick = () => { S.car = (S.car + CARS.length - 1) % CARS.length; setCar(); updateUI(); };
+$('nx').onclick = () => { S.car = (S.car + 1) % CARS.length; setCar(); updateUI(); };
+})();
+</script>
 </body>
-</html>
+      </html>
+      
